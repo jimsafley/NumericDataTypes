@@ -49,25 +49,43 @@ class Module extends AbstractModule
             'api.search.query',
             function (Event $event) {
                 $query = $event->getParam('request')->getContent();
-                if (isset($query['ts']['lt']['ts']) && isset($query['ts']['lt']['pid'])) {
+                if (isset($query['ts'])) {
                     $qb = $event->getParam('queryBuilder');
                     $adapter = $event->getTarget();
-                    $itemAlias = $adapter->getEntityClass();
-                    $valuesAlias = $adapter->createAlias();
-                    $qb->innerJoin(
-                        "$itemAlias.values",
-                        $valuesAlias,
-                        'WITH',
-                        $qb->expr()->andX(
-                            $qb->expr()->eq("$valuesAlias.type", "'timestamp'"),
-                            $qb->expr()->eq("$valuesAlias.property", (int) $query['ts']['lt']['pid'])
-                        )
-                    );
-                    $qb->andWhere($qb->expr()->lt(
-                        "$valuesAlias.value",
-                        $adapter->createNamedParameter($qb, $query['ts']['lt']['ts'])
-                    ));
+                    if (isset($query['ts']['lt']['ts']) && isset($query['ts']['lt']['pid'])) {
+                        $valuesAlias = $adapter->createAlias();
+                        $qb->leftJoin(
+                            $adapter->getEntityClass() . '.values',
+                            $valuesAlias,
+                            'WITH',
+                            $qb->expr()->andX(
+                                $qb->expr()->eq("$valuesAlias.type", "'timestamp'"),
+                                $qb->expr()->eq("$valuesAlias.property", (int) $query['ts']['lt']['pid'])
+                            )
+                        );
+                        $qb->andWhere($qb->expr()->lt(
+                            "$valuesAlias.value",
+                            $adapter->createNamedParameter($qb, $query['ts']['lt']['ts'])
+                        ));
+                    }
+                    if (isset($query['ts']['gt']['ts']) && isset($query['ts']['gt']['pid'])) {
+                        $valuesAlias = $adapter->createAlias();
+                        $qb->leftJoin(
+                            $adapter->getEntityClass() . '.values',
+                            $valuesAlias,
+                            'WITH',
+                            $qb->expr()->andX(
+                                $qb->expr()->eq("$valuesAlias.type", "'timestamp'"),
+                                $qb->expr()->eq("$valuesAlias.property", (int) $query['ts']['gt']['pid'])
+                            )
+                        );
+                        $qb->andWhere($qb->expr()->gt(
+                            "$valuesAlias.value",
+                            $adapter->createNamedParameter($qb, $query['ts']['gt']['ts'])
+                        ));
+                    }
                 }
+                //~ echo $qb->getDQL();exit;
             }
         );
     }
