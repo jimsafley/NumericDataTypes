@@ -49,6 +49,15 @@ class Module extends AbstractModule
             'api.search.query',
             [$this, 'prepareQuery']
         );
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Item',
+            'view.advanced_search',
+            function (Event $event) {
+                $partials = $event->getParam('partials');
+                $partials[] = 'common/timestamp-advanced-search';
+                $event->setParam('partials', $partials);
+            }
+        );
     }
 
     public function prepareResourceForm(Event $event)
