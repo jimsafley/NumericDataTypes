@@ -28,6 +28,9 @@ $(document).on('o:prepare-value', function(e, type, value) {
 /**
  * Set a timestamp to a value.
  *
+ * We store timestamp and not ISO 8601 because the former is a signed integer
+ * and thus better suited for simple database comparisons.
+ *
  * @param v Value input
  * @param y Year input
  * @param m Month select 
