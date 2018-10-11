@@ -29,6 +29,7 @@ class Timestamp extends AbstractDataType
         ]);
 
         $yearInput = new Element\Text('timestamp-year');
+        $yearInput->setAttribute('placeholder', 'Enter year'); // @translate
 
         $monthSelect = new Element\Select('timestamp-month');
         $monthSelect->setEmptyOption('Select month'); // @translate
