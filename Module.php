@@ -91,35 +91,46 @@ DROP TABLE IF EXISTS timestamp_timestamp;
         $view->headScript()->appendFile($view->assetUrl('js/timestamp.js', 'Timestamp'));
     }
 
+    /**
+     * Save timestamp data to the timestamp table.
+     *
+     * This clears all existing timestamps and (re)saves them during create and
+     * update operations for a resource (item, item set, media). We do this as
+     * an easy way to ensure that the timestamps in the timestamp table are in
+     * sync with the timestamps in the value table.
+     *
+     * @param Event $event
+     */
     public function saveData(Event $event)
     {
         $entity = $event->getParam('entity');
-        if ($entity instanceof \Omeka\Entity\Resource) {
+        if (!$entity instanceof \Omeka\Entity\Resource) {
+            return;
+        }
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
-            $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-
-            // Delete all rows that match the resource.
+        // The resource must already be created for any timestamps to exist.
+        if ($entity->getId()) {
             $dql = 'DELETE Timestamp\Entity\TimestampTimestamp t WHERE t.resource = :resource';
             $query = $em->createQuery($dql);
             $query->setParameter('resource', $entity);
             $query->execute();
+        }
 
-            // Save the timestamps.
-            $criteria = Criteria::create()->where(Criteria::expr()->eq('type', 'timestamp'));
-            $values = $entity->getValues()->matching($criteria);
-            foreach ($values as $value) {
-                $timestamp = new TimestampTimestamp;
-                $timestamp->setResource($entity);
-                $timestamp->setProperty($value->getProperty());
-                $timestamp->setTimestamp($value->getValue());
-                $em->persist($timestamp);
-            }
+        // Save or re-save all timestamps of this resource.
+        $criteria = Criteria::create()->where(Criteria::expr()->eq('type', 'timestamp'));
+        $values = $entity->getValues()->matching($criteria);
+        foreach ($values as $value) {
+            $timestamp = new TimestampTimestamp;
+            $timestamp->setResource($entity);
+            $timestamp->setProperty($value->getProperty());
+            $timestamp->setTimestamp($value->getValue());
+            $em->persist($timestamp);
         }
     }
 
     public function prepareQuery(Event $event)
     {
-        // @todo: rewrite below to join to the timestamp table; remove the CAST_SIGNED query
         $query = $event->getParam('request')->getContent();
         if (isset($query['ts'])) {
             $qb = $event->getParam('queryBuilder');
