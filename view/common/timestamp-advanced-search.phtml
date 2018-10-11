@@ -12,6 +12,7 @@ $this->headScript()->appendFile($this->assetUrl('js/timestamp.js', 'Timestamp'))
             'name' => 'ts[before][pid]',
             'attributes' => [
                 'id' => 'timestamp-before-pid',
+                'class' => 'chosen-select',
             ],
             'options' => [
                 'empty_option' => '[Any Property]', // @translate
@@ -46,7 +47,7 @@ $this->headScript()->appendFile($this->assetUrl('js/timestamp.js', 'Timestamp'))
 
 <div class="field">
     <div class="field-meta">
-        <label for=""><?php echo $this->translate('Date comes before'); ?></label>
+        <label for=""><?php echo $this->translate('Date comes after'); ?></label>
     </div>
     <div class="inputs">
         <?php
@@ -54,6 +55,7 @@ $this->headScript()->appendFile($this->assetUrl('js/timestamp.js', 'Timestamp'))
             'name' => 'ts[after][pid]',
             'attributes' => [
                 'id' => 'timestamp-after-pid',
+                'class' => 'chosen-select',
             ],
             'options' => [
                 'empty_option' => '[Any Property]', // @translate

@@ -6,11 +6,12 @@ return [
         ],
     ],
     'entity_manager' => [
-        'functions' => [
-            'string' => [
-                'cast_signed' => Timestamp\Query\CastSigned::class,
-            ],
-        ]
+        'mapping_classes_paths' => [
+            OMEKA_PATH . '/modules/Timestamp/src/Entity',
+        ],
+        'proxy_paths' => [
+            OMEKA_PATH . '/modules/Timestamp/data/doctrine-proxies',
+        ],
     ],
     'data_types' => [
         'invokables' => [

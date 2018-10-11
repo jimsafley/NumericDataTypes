@@ -1,15 +1,34 @@
 <?php
 namespace Timestamp;
 
+use Doctrine\Common\Collections\Criteria;
 use Omeka\Module\AbstractModule;
+use Timestamp\Entity\TimestampTimestamp;
 use Zend\EventManager\Event;
 use Zend\EventManager\SharedEventManagerInterface;
+use Zend\ServiceManager\ServiceLocatorInterface;
 
 class Module extends AbstractModule
 {
     public function getConfig()
     {
         return include __DIR__ . '/config/module.config.php';
+    }
+
+    public function install(ServiceLocatorInterface $services)
+    {
+        $services->get('Omeka\Connection')->exec('
+CREATE TABLE timestamp_timestamp (id INT AUTO_INCREMENT NOT NULL, resource_id INT NOT NULL, property_id INT NOT NULL, timestamp BIGINT NOT NULL, INDEX IDX_2BD8E9B89329D25 (resource_id), INDEX IDX_2BD8E9B549213EC (property_id), INDEX property_timestamp (property_id, timestamp), INDEX timestamp (timestamp), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;
+ALTER TABLE timestamp_timestamp ADD CONSTRAINT FK_2BD8E9B89329D25 FOREIGN KEY (resource_id) REFERENCES resource (id) ON DELETE CASCADE;
+ALTER TABLE timestamp_timestamp ADD CONSTRAINT FK_2BD8E9B549213EC FOREIGN KEY (property_id) REFERENCES property (id) ON DELETE CASCADE;
+');
+    }
+
+    public function uninstall(ServiceLocatorInterface $services)
+    {
+        $services->get('Omeka\Connection')->exec('
+DROP TABLE IF EXISTS timestamp_timestamp;
+');
     }
 
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
@@ -50,6 +69,11 @@ class Module extends AbstractModule
             [$this, 'prepareQuery']
         );
         $sharedEventManager->attach(
+            'Omeka\Api\Adapter\ItemAdapter',
+            'api.hydrate.post',
+            [$this, 'saveData']
+        );
+        $sharedEventManager->attach(
             'Omeka\Controller\Admin\Item',
             'view.advanced_search',
             function (Event $event) {
@@ -67,41 +91,68 @@ class Module extends AbstractModule
         $view->headScript()->appendFile($view->assetUrl('js/timestamp.js', 'Timestamp'));
     }
 
+    public function saveData(Event $event)
+    {
+        $entity = $event->getParam('entity');
+        if ($entity instanceof \Omeka\Entity\Resource) {
+
+            $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+            // Delete all rows that match the resource.
+            $dql = 'DELETE Timestamp\Entity\TimestampTimestamp t WHERE t.resource = :resource';
+            $query = $em->createQuery($dql);
+            $query->setParameter('resource', $entity);
+            $query->execute();
+
+            // Save the timestamps.
+            $criteria = Criteria::create()->where(Criteria::expr()->eq('type', 'timestamp'));
+            $values = $entity->getValues()->matching($criteria);
+            foreach ($values as $value) {
+                $timestamp = new TimestampTimestamp;
+                $timestamp->setResource($entity);
+                $timestamp->setProperty($value->getProperty());
+                $timestamp->setTimestamp($value->getValue());
+                $em->persist($timestamp);
+            }
+        }
+    }
+
     public function prepareQuery(Event $event)
     {
+        // @todo: rewrite below to join to the timestamp table; remove the CAST_SIGNED query
         $query = $event->getParam('request')->getContent();
         if (isset($query['ts'])) {
             $qb = $event->getParam('queryBuilder');
             $adapter = $event->getTarget();
             if (isset($query['ts']['before']['ts']) && isset($query['ts']['before']['pid'])) {
-                $valuesAlias = $adapter->createAlias();
+                $alias = $adapter->createAlias();
                 $qb->leftJoin(
-                    $adapter->getEntityClass() . '.values',
-                    $valuesAlias,
+                    'Timestamp\Entity\TimestampTimestamp',
+                    $alias,
                     'WITH',
                     $qb->expr()->andX(
-                        $qb->expr()->eq("$valuesAlias.type", "'timestamp'"),
-                        $qb->expr()->eq("$valuesAlias.property", (int) $query['ts']['before']['pid'])
+                        $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
+                        $qb->expr()->eq("$alias.property", (int) $query['ts']['before']['pid'])
                     )
                 );
                 $qb->andWhere($qb->expr()->lt(
-                    "CAST_SIGNED($valuesAlias.value)",
+                    "$alias.timestamp",
                     $adapter->createNamedParameter($qb, (int) $query['ts']['before']['ts'])
                 ));
             }
             if (isset($query['ts']['after']['ts']) && isset($query['ts']['after']['pid'])) {
-                $valuesAlias = $adapter->createAlias();
+                $alias = $adapter->createAlias();
                 $qb->leftJoin(
-                    $adapter->getEntityClass() . '.values',
-                    $valuesAlias,
+                    'Timestamp\Entity\TimestampTimestamp',
+                    $alias,
                     'WITH',
                     $qb->expr()->andX(
-                        $qb->expr()->eq("$valuesAlias.type", "'timestamp'"),
-                        $qb->expr()->eq("$valuesAlias.property", (int) $query['ts']['after']['pid'])
+                        $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
+                        $qb->expr()->eq("$alias.property", (int) $query['ts']['after']['pid'])
                     )
                 );
                 $qb->andWhere($qb->expr()->gt(
-                    "CAST_SIGNED($valuesAlias.value)",
+                    "$alias.timestamp",
                     $adapter->createNamedParameter($qb, (int) $query['ts']['after']['ts'])
                 ));
             }
