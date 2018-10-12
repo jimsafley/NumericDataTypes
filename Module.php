@@ -105,27 +105,53 @@ DROP TABLE IF EXISTS timestamp_timestamp;
     {
         $entity = $event->getParam('entity');
         if (!$entity instanceof \Omeka\Entity\Resource) {
+            // This is not a resource.
             return;
         }
-        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
-        // The resource must already be created for any timestamps to exist.
-        if ($entity->getId()) {
-            $dql = 'DELETE Timestamp\Entity\TimestampTimestamp t WHERE t.resource = :resource';
-            $query = $em->createQuery($dql);
-            $query->setParameter('resource', $entity);
-            $query->execute();
-        }
-
-        // Save or re-save all timestamps of this resource.
         $criteria = Criteria::create()->where(Criteria::expr()->eq('type', 'timestamp'));
         $values = $entity->getValues()->matching($criteria);
+        if (!$values) {
+            // This resource has no timestamp values.
+            return;
+        }
+
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $existingTimestamps = [];
+        $newTimestamps = [];
+
+        if ($entity->getId()) {
+            $dql = 'SELECT t FROM Timestamp\Entity\TimestampTimestamp t WHERE t.resource = :resource';
+            $query = $em->createQuery($dql);
+            $query->setParameter('resource', $entity);
+            $existingTimestamps = $query->getResult();
+        }
         foreach ($values as $value) {
-            $timestamp = new TimestampTimestamp;
+            // Avoid ID churn by reusing timestamp rows.
+            $timestamp = current($existingTimestamps);
+            if ($timestamp === false) {
+                // No more timestamp rows to reuse. Create a new one.
+                $timestamp = new TimestampTimestamp;
+                $newTimestamps[] = $timestamp;
+            } else {
+                // Null out timestamps as we reuse them. Note that existing
+                // timestamps are already managed and will update during flush.
+                $existingTimestamps[key($existingTimestamps)] = null;
+                next($existingTimestamps);
+            }
             $timestamp->setResource($entity);
             $timestamp->setProperty($value->getProperty());
             $timestamp->setTimestamp($value->getValue());
-            $em->persist($timestamp);
+        }
+        // Remove any timestamps that weren't reused.
+        foreach ($existingTimestamps as $existingTimestamp) {
+            if (null !== $existingTimestamp) {
+                $em->remove($existingTimestamp);
+            }
+        }
+        // Persist any new timestamps that had to be created.
+        foreach ($newTimestamps as $newTimestamp) {
+            $em->persist($newTimestamp);
         }
     }
 
