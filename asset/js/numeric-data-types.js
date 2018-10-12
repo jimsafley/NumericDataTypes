@@ -1,9 +1,9 @@
 $(document).on('o:prepare-value', function(e, type, value) {
-    if ('timestamp' === type) {
+    if ('numeric:timestamp' === type) {
         var v = value.find('input[data-value-key="@value"]');
-        var y = value.find('input[name="timestamp-year"]');
-        var m = value.find('select[name="timestamp-month"]');
-        var d = value.find('select[name="timestamp-day"]');
+        var y = value.find('input[name="numeric-timestamp-year"]');
+        var m = value.find('select[name="numeric-timestamp-month"]');
+        var d = value.find('select[name="numeric-timestamp-day"]');
 
         // Set existing year, month, and day during initial load.
         if (v.val()) {

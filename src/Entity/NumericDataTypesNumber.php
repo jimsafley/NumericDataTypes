@@ -1,20 +1,20 @@
 <?php
-namespace Timestamp\Entity;
+namespace NumericDataTypes\Entity;
 
 use Omeka\Entity\AbstractEntity;
 use Omeka\Entity\Property;
 use Omeka\Entity\Resource;
 
 /**
- * @Entity
+ * @MappedSuperclass
  * @Table(
  *     indexes={
- *         @Index(name="property_timestamp", columns={"property_id", "timestamp"}),
- *         @Index(name="timestamp", columns={"timestamp"}),
+ *         @Index(name="property_value", columns={"property_id", "value"}),
+ *         @Index(name="value", columns={"value"}),
  *     }
  * )
  */
-class TimestampTimestamp extends AbstractEntity
+class NumericDataTypesNumber extends AbstractEntity
 {
     /**
      * @Id
@@ -45,11 +45,6 @@ class TimestampTimestamp extends AbstractEntity
      */
     protected $property;
 
-    /**
-     * @Column(type="bigint")
-     */
-    protected $timestamp;
-
     public function getId()
     {
         return $this->id;
@@ -75,13 +70,13 @@ class TimestampTimestamp extends AbstractEntity
         return $this->property;
     }
 
-    public function setTimestamp($timestamp)
+    public function setValue($value)
     {
-        $this->timestamp = (int) $timestamp;
+        $this->value = (int) $value;
     }
 
-    public function getTimestamp()
+    public function getValue()
     {
-        return $this->timestamp;
+        return $this->value;
     }
 }
