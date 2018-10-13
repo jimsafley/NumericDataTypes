@@ -9,7 +9,7 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
     <div class="inputs">
         <?php
         echo $this->propertySelect([
-            'name' => 'numeric[ts][before][pid]',
+            'name' => 'numeric[ts][lt][pid]',
             'attributes' => [
                 'id' => 'timestamp-before-pid',
                 'class' => 'chosen-select',
@@ -41,7 +41,7 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
             <option value="<?php echo $day; ?>"><?php echo $day; ?></option>
             <?php endforeach; ?>
         </select>
-        <input type="hidden" id="timestamp-before-ts" name="numeric[ts][before][ts]">
+        <input type="hidden" id="timestamp-before-ts" name="numeric[ts][lt][val]">
     </div>
 </div>
 
@@ -52,7 +52,7 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
     <div class="inputs">
         <?php
         echo $this->propertySelect([
-            'name' => 'numeric[ts][after][pid]',
+            'name' => 'numeric[ts][gt][pid]',
             'attributes' => [
                 'id' => 'timestamp-after-pid',
                 'class' => 'chosen-select',
@@ -84,7 +84,7 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
             <option value="<?php echo $day; ?>"><?php echo $day; ?></option>
             <?php endforeach; ?>
         </select>
-        <input type="hidden" id="timestamp-after-ts" name="numeric[ts][after][ts]">
+        <input type="hidden" id="timestamp-after-ts" name="numeric[ts][gt][val]">
     </div>
 </div>
 
@@ -104,7 +104,7 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
             ]
         ]);
         ?>
-        <input type="number" step="1" name="numeric[int][lt][int]" placeholder="<?php echo $this->translate('Enter integer'); ?>">    </div>
+        <input type="number" step="1" name="numeric[int][lt][val]" placeholder="<?php echo $this->translate('Enter integer'); ?>">    </div>
 </div>
 
 <div class="field">
@@ -123,7 +123,7 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
             ]
         ]);
         ?>
-        <input type="number" step="1" name="numeric[int][gt][int]" placeholder="<?php echo $this->translate('Enter integer'); ?>">    </div>
+        <input type="number" step="1" name="numeric[int][gt][val]" placeholder="<?php echo $this->translate('Enter integer'); ?>">    </div>
 </div>
 
 <script>
