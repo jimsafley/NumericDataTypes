@@ -102,6 +102,7 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
      * an easy way to ensure that the numbers in the number tables are in sync
      * with the numbers in the value table.
      *
+     * @todo Automate the generation of $dataTypes array
      * @param Event $event
      */
     public function saveNumericData(Event $event)
@@ -112,7 +113,6 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
             return;
         }
 
-        // @todo: automate the generation of this array
         $dataTypes = [
             'numeric:timestamp' => '\NumericDataTypes\Entity\NumericDataTypesTimestamp',
             'numeric:integer' => '\NumericDataTypes\Entity\NumericDataTypesInteger',
@@ -175,6 +175,7 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
      *   ],
      * ]
      *
+     * @todo Generalize query validation and query building
      * @param Event $event
      */
     public function prepareQuery(Event $event)
