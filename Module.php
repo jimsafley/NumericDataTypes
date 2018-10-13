@@ -81,7 +81,7 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
             'view.advanced_search',
             function (Event $event) {
                 $partials = $event->getParam('partials');
-                $partials[] = 'common/timestamp-advanced-search';
+                $partials[] = 'common/numeric-data-types-advanced-search';
                 $event->setParam('partials', $partials);
             }
         );
@@ -161,44 +161,94 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
         }
     }
 
+    /**
+     * Prepare numerical queries.
+     *
+     * numeric => [
+     *   ts => [
+     *     before => [ts => <timestamp>, pid => <propertyID>],
+     *     after => [ts => <timestamp>, pid => <propertyID>],
+     *   ],
+     *   int => [
+     *     lt => [int => <integer>, pid => <propertyID>],
+     *     gt => [int => <integer>, pid => <propertyID>],
+     *   ],
+     * ]
+     *
+     * @param Event $event
+     */
     public function prepareQuery(Event $event)
     {
         $query = $event->getParam('request')->getContent();
-        if (isset($query['ts'])) {
-            $qb = $event->getParam('queryBuilder');
-            $adapter = $event->getTarget();
-            if (isset($query['ts']['before']['ts']) && isset($query['ts']['before']['pid'])) {
-                $alias = $adapter->createAlias();
-                $qb->leftJoin(
-                    'NumericDataTypes\Entity\NumericDataTypesTimestamp',
-                    $alias,
-                    'WITH',
-                    $qb->expr()->andX(
-                        $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
-                        $qb->expr()->eq("$alias.property", (int) $query['ts']['before']['pid'])
-                    )
-                );
-                $qb->andWhere($qb->expr()->lt(
-                    "$alias.value",
-                    $adapter->createNamedParameter($qb, (int) $query['ts']['before']['ts'])
-                ));
-            }
-            if (isset($query['ts']['after']['ts']) && isset($query['ts']['after']['pid'])) {
-                $alias = $adapter->createAlias();
-                $qb->leftJoin(
-                    'NumericDataTypes\Entity\NumericDataTypesTimestamp',
-                    $alias,
-                    'WITH',
-                    $qb->expr()->andX(
-                        $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
-                        $qb->expr()->eq("$alias.property", (int) $query['ts']['after']['pid'])
-                    )
-                );
-                $qb->andWhere($qb->expr()->gt(
-                    "$alias.value",
-                    $adapter->createNamedParameter($qb, (int) $query['ts']['after']['ts'])
-                ));
-            }
+        if (!isset($query['numeric'])) {
+            return;
+        }
+        $adapter = $event->getTarget();
+        $qb = $event->getParam('queryBuilder');
+
+        if (isset($query['numeric']['ts']['before']['ts']) && isset($query['numeric']['ts']['before']['pid'])) {
+            $alias = $adapter->createAlias();
+            $qb->leftJoin(
+                'NumericDataTypes\Entity\NumericDataTypesTimestamp',
+                $alias,
+                'WITH',
+                $qb->expr()->andX(
+                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
+                    $qb->expr()->eq("$alias.property", (int) $query['numeric']['ts']['before']['pid'])
+                )
+            );
+            $qb->andWhere($qb->expr()->lt(
+                "$alias.value",
+                $adapter->createNamedParameter($qb, (int) $query['numeric']['ts']['before']['ts'])
+            ));
+        }
+        if (isset($query['numeric']['ts']['after']['ts']) && isset($query['numeric']['ts']['after']['pid'])) {
+            $alias = $adapter->createAlias();
+            $qb->leftJoin(
+                'NumericDataTypes\Entity\NumericDataTypesTimestamp',
+                $alias,
+                'WITH',
+                $qb->expr()->andX(
+                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
+                    $qb->expr()->eq("$alias.property", (int) $query['numeric']['ts']['after']['pid'])
+                )
+            );
+            $qb->andWhere($qb->expr()->gt(
+                "$alias.value",
+                $adapter->createNamedParameter($qb, (int) $query['numeric']['ts']['after']['ts'])
+            ));
+        }
+        if (isset($query['numeric']['int']['lt']['int']) && isset($query['numeric']['int']['lt']['pid'])) {
+            $alias = $adapter->createAlias();
+            $qb->leftJoin(
+                'NumericDataTypes\Entity\NumericDataTypesInteger',
+                $alias,
+                'WITH',
+                $qb->expr()->andX(
+                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
+                    $qb->expr()->eq("$alias.property", (int) $query['numeric']['int']['lt']['pid'])
+                )
+            );
+            $qb->andWhere($qb->expr()->lt(
+                "$alias.value",
+                $adapter->createNamedParameter($qb, (int) $query['numeric']['int']['lt']['int'])
+            ));
+        }
+        if (isset($query['numeric']['int']['gt']['int']) && isset($query['numeric']['int']['gt']['pid'])) {
+            $alias = $adapter->createAlias();
+            $qb->leftJoin(
+                'NumericDataTypes\Entity\NumericDataTypesInteger',
+                $alias,
+                'WITH',
+                $qb->expr()->andX(
+                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
+                    $qb->expr()->eq("$alias.property", (int) $query['numeric']['int']['gt']['pid'])
+                )
+            );
+            $qb->andWhere($qb->expr()->gt(
+                "$alias.value",
+                $adapter->createNamedParameter($qb, (int) $query['numeric']['int']['gt']['int'])
+            ));
         }
     }
 }

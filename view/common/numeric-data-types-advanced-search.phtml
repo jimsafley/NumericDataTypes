@@ -9,7 +9,7 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
     <div class="inputs">
         <?php
         echo $this->propertySelect([
-            'name' => 'ts[before][pid]',
+            'name' => 'numeric[ts][before][pid]',
             'attributes' => [
                 'id' => 'timestamp-before-pid',
                 'class' => 'chosen-select',
@@ -41,7 +41,7 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
             <option value="<?php echo $day; ?>"><?php echo $day; ?></option>
             <?php endforeach; ?>
         </select>
-        <input type="hidden" id="timestamp-before-ts" name="ts[before][ts]">
+        <input type="hidden" id="timestamp-before-ts" name="numeric[ts][before][ts]">
     </div>
 </div>
 
@@ -52,7 +52,7 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
     <div class="inputs">
         <?php
         echo $this->propertySelect([
-            'name' => 'ts[after][pid]',
+            'name' => 'numeric[ts][after][pid]',
             'attributes' => [
                 'id' => 'timestamp-after-pid',
                 'class' => 'chosen-select',
@@ -84,8 +84,46 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
             <option value="<?php echo $day; ?>"><?php echo $day; ?></option>
             <?php endforeach; ?>
         </select>
-        <input type="hidden" id="timestamp-after-ts" name="ts[after][ts]">
+        <input type="hidden" id="timestamp-after-ts" name="numeric[ts][after][ts]">
     </div>
+</div>
+
+<div class="field">
+    <div class="field-meta">
+        <label for=""><?php echo $this->translate('Value is less than'); ?></label>
+    </div>
+    <div class="inputs">
+        <?php
+        echo $this->propertySelect([
+            'name' => 'numeric[int][lt][pid]',
+            'attributes' => [
+                'class' => 'chosen-select',
+            ],
+            'options' => [
+                'empty_option' => '[Any Property]', // @translate
+            ]
+        ]);
+        ?>
+        <input type="number" step="1" name="numeric[int][lt][int]" placeholder="<?php echo $this->translate('Enter integer'); ?>">    </div>
+</div>
+
+<div class="field">
+    <div class="field-meta">
+        <label for=""><?php echo $this->translate('Value is greater than'); ?></label>
+    </div>
+    <div class="inputs">
+        <?php
+        echo $this->propertySelect([
+            'name' => 'numeric[int][gt][pid]',
+            'attributes' => [
+                'class' => 'chosen-select',
+            ],
+            'options' => [
+                'empty_option' => '[Any Property]', // @translate
+            ]
+        ]);
+        ?>
+        <input type="number" step="1" name="numeric[int][gt][int]" placeholder="<?php echo $this->translate('Enter integer'); ?>">    </div>
 </div>
 
 <script>
