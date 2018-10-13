@@ -117,24 +117,25 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
             'numeric:timestamp' => '\NumericDataTypes\Entity\NumericDataTypesTimestamp',
             'numeric:integer' => '\NumericDataTypes\Entity\NumericDataTypesInteger',
         ];
+        $allValues = $entity->getValues();
         foreach ($dataTypes as $dataTypeName => $entityClass) {
             $criteria = Criteria::create()->where(Criteria::expr()->eq('type', $dataTypeName));
-            $values = $entity->getValues()->matching($criteria);
-            if (!$values) {
-                // This resource has no number values.
-                return;
+            $matchingValues = $allValues->matching($criteria);
+            if (!$matchingValues) {
+                // This resource has no number values of this type.
+                continue;
             }
 
             $em = $this->getServiceLocator()->get('Omeka\EntityManager');
             $existingNumbers = [];
 
             if ($entity->getId()) {
-                $dql = sprintf('SELECT t FROM %s t WHERE t.resource = :resource', $entityClass);
+                $dql = sprintf('SELECT n FROM %s n WHERE n.resource = :resource', $entityClass);
                 $query = $em->createQuery($dql);
                 $query->setParameter('resource', $entity);
                 $existingNumbers = $query->getResult();
             }
-            foreach ($values as $value) {
+            foreach ($matchingValues as $value) {
                 // Avoid ID churn by reusing number rows.
                 $number = current($existingNumbers);
                 if ($number === false) {
