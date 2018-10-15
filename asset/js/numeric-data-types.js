@@ -3,7 +3,7 @@ $(document).on('o:prepare-value', function(e, type, value) {
         var v = value.find('input[data-value-key="@value"]');
         var y = value.find('input[name="numeric-timestamp-year"]');
         var m = value.find('select[name="numeric-timestamp-month"]');
-        var d = value.find('select[name="numeric-timestamp-day"]');
+        var d = value.find('input[name="numeric-timestamp-day"]');
 
         // Set existing year, month, and day during initial load.
         if (v.val()) {
@@ -19,7 +19,7 @@ $(document).on('o:prepare-value', function(e, type, value) {
         m.on('change', function(e) {
             setTimestamp(v, y, m, d);
         });
-        d.on('change', function(e) {
+        d.on('input', function(e) {
             setTimestamp(v, y, m, d);
         });
     }
@@ -43,9 +43,11 @@ $(document).on('o:prepare-value', function(e, type, value) {
 var setTimestamp = function (v, y, m, d) {
     var year = y.val() ? y.val() : null;
     if (year) {
-        var month = m.val() ? m.val() : 0;
+        var month = m.val() ? m.val() : 0; // 0 = January
         var day = d.val() ? d.val() : 1;
-        var timestamp = new Date(year, month, day, 0, 0, 0).getTime();
+        var date = new Date(null, month, day, 0, 0, 0);
+        date.setFullYear(year); // use setFullYear() so e.g. 5 = 0005
+        var timestamp = date.getTime();
         v.val(timestamp ? timestamp * .001: null); // convert ms to s
     } else {
         // Date() recognizes a null year, but we don't.

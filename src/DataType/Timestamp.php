@@ -25,8 +25,11 @@ class Timestamp extends AbstractDataType
             'data-value-key' => '@value',
         ]);
 
-        $yearInput = new Element\Text('numeric-timestamp-year');
-        $yearInput->setAttribute('placeholder', 'Enter year'); // @translate
+        $yearInput = new Element\Number('numeric-timestamp-year');
+        $yearInput->setAttributes([
+            'step' => 1,
+            'placeholder' => 'Enter year', // @translate
+        ]);
 
         $monthSelect = new Element\Select('numeric-timestamp-month');
         $monthSelect->setEmptyOption('Select month'); // @translate
@@ -45,15 +48,19 @@ class Timestamp extends AbstractDataType
             'December', // @translate
         ]);
 
-        $daySelect = new Element\Select('numeric-timestamp-day');
-        $daySelect->setEmptyOption('Select day'); // @translate
-        $daySelect->setValueOptions(array_combine(range(1, 31), range(1, 31)));
+        $dayInput = new Element\Number('numeric-timestamp-day');
+        $dayInput->setAttributes([
+            'step' => 1,
+            'min' => 1,
+            'max' => 31,
+            'placeholder' => 'Enter day', // @translate
+        ]);
 
         return sprintf(
             '%s%s%s%s',
-            $view->formText($yearInput),
+            $view->formNumber($yearInput),
             $view->formSelect($monthSelect),
-            $view->formSelect($daySelect),
+            $view->formNumber($dayInput),
             $view->formHidden($valueInput)
         );
     }
