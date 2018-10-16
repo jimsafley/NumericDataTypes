@@ -69,7 +69,12 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
         $sharedEventManager->attach(
             'Omeka\Api\Adapter\ItemAdapter',
             'api.search.query',
-            [$this, 'prepareQuery']
+            [$this, 'addNumericalQuerying']
+        );
+        $sharedEventManager->attach(
+            'Omeka\Api\Adapter\ItemAdapter',
+            'api.search.query',
+            [$this, 'addNumericalSorting']
         );
         $sharedEventManager->attach(
             'Omeka\Api\Adapter\ItemAdapter',
@@ -162,7 +167,7 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
     }
 
     /**
-     * Prepare numerical queries.
+     * Add numerical queries.
      *
      * numeric => [
      *   ts => [
@@ -178,7 +183,7 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
      * @todo Generalize query validation and query building
      * @param Event $event
      */
-    public function prepareQuery(Event $event)
+    public function addNumericalQuerying(Event $event)
     {
         $query = $event->getParam('request')->getContent();
         if (!isset($query['numeric'])) {
@@ -266,6 +271,63 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
                 "$alias.value",
                 $adapter->createNamedParameter($qb, (int) $query['numeric']['int']['gt']['val'])
             ));
+        }
+    }
+
+    /**
+     * Add numerical sorting.
+     *
+     * sort_by=o-numeric:ts:<vocab_prefix>:<property_local_name>
+     * sort_by=o-numeric:int:<vocab_prefix>:<property_local_name>
+     *
+     * @param Event $event
+     */
+    public function addNumericalSorting(Event $event)
+    {
+        $adapter = $event->getTarget();
+        $qb = $event->getParam('queryBuilder');
+        $query = $event->getParam('request')->getContent();
+
+        if (!is_string($query['sort_by'])) {
+            return;
+        }
+        $sortBy = explode(':', $query['sort_by']);
+        if (4 !== count($sortBy)
+            || 'o-numeric' !== $sortBy[0]
+            || !in_array($sortBy[1], ['ts', 'int'])
+        ) {
+            return;
+        }
+        $property = $adapter->getPropertyByTerm(sprintf('%s:%s', $sortBy[2], $sortBy[3]));
+        if (!$property) {
+            return;
+        }
+        if ('int' === $sortBy[1]) {
+            $alias = $adapter->createAlias();
+            $qb->addSelect("MIN($alias.value) as HIDDEN numeric_value");
+            $qb->leftJoin(
+                'NumericDataTypes\Entity\NumericDataTypesInteger',
+                $alias,
+                'WITH',
+                $qb->expr()->andX(
+                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
+                    $qb->expr()->eq("$alias.property", $property->getId())
+                )
+            );
+            $qb->addOrderBy('numeric_value', $query['sort_order']);
+        } elseif ('ts' === $sortBy[1]) {
+            $alias = $adapter->createAlias();
+            $qb->addSelect("MIN($alias.value) as HIDDEN numeric_value");
+            $qb->leftJoin(
+                'NumericDataTypes\Entity\NumericDataTypesTimestamp',
+                $alias,
+                'WITH',
+                $qb->expr()->andX(
+                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
+                    $qb->expr()->eq("$alias.property", $property->getId())
+                )
+            );
+            $qb->addOrderBy('numeric_value', $query['sort_order']);
         }
     }
 }
