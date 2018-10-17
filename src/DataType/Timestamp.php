@@ -2,12 +2,22 @@
 namespace NumericDataTypes\DataType;
 
 use DateTime;
+use Omeka\Api\Adapter\AbstractEntityAdapter;
 use Omeka\Api\Representation\ValueRepresentation;
+use Omeka\Entity\Value;
 use Zend\Form\Element;
 use Zend\View\Renderer\PhpRenderer;
 
 class Timestamp extends AbstractDataType
 {
+    /**
+     * Minimum and maximum years. When converted to Unix timestamps, anything
+     * outside this range would exceed the minimum or maximum range for a 64-bit
+     * integer.
+     */
+    const YEAR_MIN = -292277022656;
+    const YEAR_MAX = 292277026596;
+
     public function getName()
     {
         return 'numeric:timestamp';
@@ -28,24 +38,26 @@ class Timestamp extends AbstractDataType
         $yearInput = new Element\Number('numeric-timestamp-year');
         $yearInput->setAttributes([
             'step' => 1,
+            'min' => self::YEAR_MIN,
+            'max' => self::YEAR_MAX,
             'placeholder' => 'Enter year', // @translate
         ]);
 
         $monthSelect = new Element\Select('numeric-timestamp-month');
         $monthSelect->setEmptyOption('Select month'); // @translate
         $monthSelect->setValueOptions([
-            'January', // @translate
-            'February', // @translate
-            'March', // @translate
-            'April', // @translate
-            'May', // @translate
-            'June', // @translate
-            'July', // @translate
-            'August', // @translate
-            'September', // @translate
-            'October', // @translate
-            'November', // @translate
-            'December', // @translate
+            1 => 'January', // @translate
+            2 => 'February', // @translate
+            3 => 'March', // @translate
+            4 => 'April', // @translate
+            5 => 'May', // @translate
+            6 => 'June', // @translate
+            7 => 'July', // @translate
+            8 => 'August', // @translate
+            9 => 'September', // @translate
+            10 => 'October', // @translate
+            11 => 'November', // @translate
+            12 => 'December', // @translate
         ]);
 
         $dayInput = new Element\Number('numeric-timestamp-day');
@@ -67,13 +79,106 @@ class Timestamp extends AbstractDataType
 
     public function isValid(array $valueObject)
     {
-        return $this->stringIsValidInteger($valueObject['@value']);
+        try {
+            $this->getDateFromValue($valueObject['@value']);
+        } catch (\InvalidArgumentException $e) {
+            return false;
+        }
+        return true;
+    }
+
+    public function hydrate(array $valueObject, Value $value, AbstractEntityAdapter $adapter)
+    {
+        // Normalize the date for value storage. The passed value may include
+        // zero-padding on month and day. This removes zero-padding to ensure
+        // consistent format.
+        $date = $this->getDateFromValue($valueObject['@value']);
+        if (isset($date['month']) && isset($date['day'])) {
+            $dateFormat = 'Y-n-j';
+        } elseif (isset($date['month'])) {
+            $dateFormat = 'Y-n';
+        } else {
+            $dateFormat = 'Y';
+        }
+        $value->setValue($date['date']->format($dateFormat));
+        $value->setLang(null);
+        $value->setUri(null);
+        $value->setValueResource(null);
     }
 
     public function render(PhpRenderer $view, ValueRepresentation $value)
     {
-        $dateTime = new DateTime;
-        $dateTime->setTimestamp((int) $value->value());
-        return $dateTime->format('Y-m-d');
+        $date = $this->getDateFromValue($value->value());
+        if (isset($date['month']) && isset($date['day'])) {
+            $dateFormat = 'F j, Y';
+        } elseif (isset($date['month'])) {
+            $dateFormat = 'F Y';
+        } else {
+            $dateFormat = 'Y';
+        }
+        return $date['date']->format($dateFormat);
+    }
+
+    public function getEntityClass()
+    {
+        return '\NumericDataTypes\Entity\NumericDataTypesTimestamp';
+    }
+
+    /**
+     * Get the Unix timestamp from the value.
+     *
+     * @param string $value
+     * @return int
+     */
+    public function getNumberFromValue($value)
+    {
+        $date = $this->getDateFromValue($value);
+        return $date['date']->getTimestamp();
+    }
+
+    /**
+     * Get the decomposed date and DateTime object from the value.
+     *
+     * Also used to validate the date since validation is a side effect of
+     * parsing the value into its component date pieces.
+     *
+     * At this granularity (yyyy-mm-dd) the date range is "-292277022656-12-31"
+     * to "292277026596-12-4" which when converted to Unix timestamps reach
+     * minimum and maximum 64-bit integers. However, for simplicity's sake, we
+     * use the date range "-292277022656-12-31" to "292277026595-12-31".
+     *
+     * @param string $value
+     * @return array|false Returns false if the date is invalid
+     */
+    public function getDateFromValue($value)
+    {
+        $isMatch = preg_match('/^(?<year>-?(\d+))(-(?<month>\d{1,2}))?(?:-(?<day>\d{1,2}))?$/', $value, $matches);
+        if (!$isMatch) {
+            throw \InvalidArgumentException('Invalid date string');
+        }
+        $date = [
+            'year' => (int) $matches['year'],
+            'month' => isset($matches['month']) ? (int) $matches['month'] : null,
+            'day' => isset($matches['day']) ? (int) $matches['day'] : null,
+            'month_normalized' => isset($matches['month']) ? (int) $matches['month'] : 1,
+            'day_normalized' => isset($matches['day']) ? (int) $matches['day'] : 1,
+        ];
+        if ((self::YEAR_MIN > $date['year']) || (self::YEAR_MAX < $date['year'])) {
+            throw \InvalidArgumentException('Invalid year');
+        }
+        if ((1 > $date['month_normalized']) || (12 < $date['month_normalized'])) {
+            throw \InvalidArgumentException('Invalid month');
+        }
+        if ((1 > $date['day_normalized']) || (31 < $date['day_normalized'])) {
+            throw \InvalidArgumentException('Invalid day');
+        }
+        // Adding the date object here to reduce code duplication.
+        $date['date'] = new DateTime;
+        $date['date']->setDate(
+            $date['year'],
+            $date['month_normalized'],
+            $date['day_normalized']
+        )->setTime(0, 0, 0, 0);
+        return $date;
     }
 }

@@ -118,12 +118,8 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
             return;
         }
 
-        $dataTypes = [
-            'numeric:timestamp' => '\NumericDataTypes\Entity\NumericDataTypesTimestamp',
-            'numeric:integer' => '\NumericDataTypes\Entity\NumericDataTypesInteger',
-        ];
         $allValues = $entity->getValues();
-        foreach ($dataTypes as $dataTypeName => $entityClass) {
+        foreach ($this->getNumericDataTypes() as $dataTypeName => $dataType) {
             $criteria = Criteria::create()->where(Criteria::expr()->eq('type', $dataTypeName));
             $matchingValues = $allValues->matching($criteria);
             if (!$matchingValues) {
@@ -135,7 +131,7 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
             $existingNumbers = [];
 
             if ($entity->getId()) {
-                $dql = sprintf('SELECT n FROM %s n WHERE n.resource = :resource', $entityClass);
+                $dql = sprintf('SELECT n FROM %s n WHERE n.resource = :resource', $dataType->getEntityClass());
                 $query = $em->createQuery($dql);
                 $query->setParameter('resource', $entity);
                 $existingNumbers = $query->getResult();
@@ -145,6 +141,7 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
                 $number = current($existingNumbers);
                 if ($number === false) {
                     // No more number rows to reuse. Create a new one.
+                    $entityClass = $dataType->getEntityClass();
                     $number = new $entityClass;
                     $em->persist($number);
                 } else {
@@ -155,7 +152,7 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
                 }
                 $number->setResource($entity);
                 $number->setProperty($value->getProperty());
-                $number->setValue($value->getValue());
+                $number->setValue($dataType->getNumberFromValue($value->getValue()));
             }
             // Remove any numbers that weren't reused.
             foreach ($existingNumbers as $existingNumber) {
@@ -171,8 +168,8 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
      *
      * numeric => [
      *   ts => [
-     *     lt => [val => <timestamp>, pid => <propertyID>],
-     *     gt => [val => <timestamp>, pid => <propertyID>],
+     *     lt => [val => <date>, pid => <propertyID>],
+     *     gt => [val => <date>, pid => <propertyID>],
      *   ],
      *   int => [
      *     lt => [val => <integer>, pid => <propertyID>],
@@ -191,12 +188,15 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
         }
         $adapter = $event->getTarget();
         $qb = $event->getParam('queryBuilder');
+        $numericDataTypes = $this->getNumericDataTypes();
 
         if (isset($query['numeric']['ts']['lt']['val'])
             && isset($query['numeric']['ts']['lt']['pid'])
             && is_numeric($query['numeric']['ts']['lt']['val'])
             && is_numeric($query['numeric']['ts']['lt']['pid'])
         ) {
+            $property = (int) $query['numeric']['ts']['lt']['pid'];
+            $value = $numericDataTypes['numeric:timestamp']->getNumberFromValue($query['numeric']['ts']['lt']['val']);
             $alias = $adapter->createAlias();
             $qb->leftJoin(
                 'NumericDataTypes\Entity\NumericDataTypesTimestamp',
@@ -204,12 +204,12 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
                 'WITH',
                 $qb->expr()->andX(
                     $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
-                    $qb->expr()->eq("$alias.property", (int) $query['numeric']['ts']['lt']['pid'])
+                    $qb->expr()->eq("$alias.property", $property)
                 )
             );
             $qb->andWhere($qb->expr()->lt(
                 "$alias.value",
-                $adapter->createNamedParameter($qb, (int) $query['numeric']['ts']['lt']['val'])
+                $adapter->createNamedParameter($qb, $value)
             ));
         }
         if (isset($query['numeric']['ts']['gt']['val'])
@@ -217,6 +217,8 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
             && is_numeric($query['numeric']['ts']['gt']['val'])
             && is_numeric($query['numeric']['ts']['gt']['pid'])
         ) {
+            $property = (int) $query['numeric']['ts']['gt']['pid'];
+            $value = $numericDataTypes['numeric:timestamp']->getNumberFromValue($query['numeric']['ts']['gt']['val']);
             $alias = $adapter->createAlias();
             $qb->leftJoin(
                 'NumericDataTypes\Entity\NumericDataTypesTimestamp',
@@ -224,12 +226,12 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
                 'WITH',
                 $qb->expr()->andX(
                     $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
-                    $qb->expr()->eq("$alias.property", (int) $query['numeric']['ts']['gt']['pid'])
+                    $qb->expr()->eq("$alias.property", $property)
                 )
             );
             $qb->andWhere($qb->expr()->gt(
                 "$alias.value",
-                $adapter->createNamedParameter($qb, (int) $query['numeric']['ts']['gt']['val'])
+                $adapter->createNamedParameter($qb, $value)
             ));
         }
         if (isset($query['numeric']['int']['lt']['val'])
@@ -237,6 +239,8 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
             && is_numeric($query['numeric']['int']['lt']['val'])
             && is_numeric($query['numeric']['int']['lt']['pid'])
         ) {
+            $property = (int) $query['numeric']['int']['lt']['pid'];
+            $value = $numericDataTypes['numeric:integer']->getNumberFromValue($query['numeric']['int']['lt']['val']);
             $alias = $adapter->createAlias();
             $qb->leftJoin(
                 'NumericDataTypes\Entity\NumericDataTypesInteger',
@@ -244,12 +248,12 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
                 'WITH',
                 $qb->expr()->andX(
                     $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
-                    $qb->expr()->eq("$alias.property", (int) $query['numeric']['int']['lt']['pid'])
+                    $qb->expr()->eq("$alias.property", $property)
                 )
             );
             $qb->andWhere($qb->expr()->lt(
                 "$alias.value",
-                $adapter->createNamedParameter($qb, (int) $query['numeric']['int']['lt']['val'])
+                $adapter->createNamedParameter($qb, $value)
             ));
         }
         if (isset($query['numeric']['int']['gt']['val'])
@@ -257,6 +261,8 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
             && is_numeric($query['numeric']['int']['gt']['val'])
             && is_numeric($query['numeric']['int']['gt']['pid'])
         ) {
+            $property = (int) $query['numeric']['int']['gt']['pid'];
+            $value = $numericDataTypes['numeric:integer']->getNumberFromValue($query['numeric']['int']['gt']['val']);
             $alias = $adapter->createAlias();
             $qb->leftJoin(
                 'NumericDataTypes\Entity\NumericDataTypesInteger',
@@ -264,12 +270,12 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
                 'WITH',
                 $qb->expr()->andX(
                     $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
-                    $qb->expr()->eq("$alias.property", (int) $query['numeric']['int']['gt']['pid'])
+                    $qb->expr()->eq("$alias.property", $property)
                 )
             );
             $qb->andWhere($qb->expr()->gt(
                 "$alias.value",
-                $adapter->createNamedParameter($qb, (int) $query['numeric']['int']['gt']['val'])
+                $adapter->createNamedParameter($qb, $value)
             ));
         }
     }
@@ -329,5 +335,22 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
             );
             $qb->addOrderBy('numeric_value', $query['sort_order']);
         }
+    }
+
+    /**
+     * Get all data types added by this module.
+     *
+     * @return array
+     */
+    public function getNumericDataTypes()
+    {
+        $dataTypes = $this->getServiceLocator()->get('Omeka\DataTypeManager');
+        $numericDataTypes = [];
+        foreach ($dataTypes->getRegisteredNames() as $dataType) {
+            if (0 === strpos($dataType, 'numeric:')) {
+                $numericDataTypes[$dataType] = $dataTypes->get($dataType);
+            }
+        }
+        return $numericDataTypes;
     }
 }

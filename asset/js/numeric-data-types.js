@@ -4,53 +4,46 @@ $(document).on('o:prepare-value', function(e, type, value) {
         var y = value.find('input[name="numeric-timestamp-year"]');
         var m = value.find('select[name="numeric-timestamp-month"]');
         var d = value.find('input[name="numeric-timestamp-day"]');
+        var matches = /(-?\d+)(-(\d{1,2}))?(-(\d{1,2}))?/.exec(v.val());
 
         // Set existing year, month, and day during initial load.
-        if (v.val()) {
-            var date = new Date(v.val() * 1000); // convert s to ms
-            y.val(date.getFullYear());
-            m.val(date.getMonth());
-            d.val(date.getDate());
+        if (matches) {
+            y.val(parseInt(matches[1]));
+            m.val(matches[3] ? parseInt(matches[3]) : null);
+            d.val(matches[5] ? parseInt(matches[5]) : null);
         }
 
         y.on('input', function(e) {
-            setTimestamp(v, y, m, d);
+            setDateValue(v, y, m, d);
         });
         m.on('change', function(e) {
-            setTimestamp(v, y, m, d);
+            setDateValue(v, y, m, d);
         });
         d.on('input', function(e) {
-            setTimestamp(v, y, m, d);
+            setDateValue(v, y, m, d);
         });
     }
 });
 
 /**
- * Set a timestamp to a value.
+ * Set a date to a value.
  *
- * We store timestamp and not ISO 8601 because the former is a signed integer
- * and thus better suited for simple database comparisons.
- *
- * Note that the Date object range is -100,000,000 days to 100,000,000 days
- * relative to 01 January, 1970 UTC.
- *
- * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Numbers_and_dates#Date_object
  * @param v Value input
  * @param y Year input
- * @param m Month select 
- * @param d Day select 
+ * @param m Month select
+ * @param d Day input
  */
-var setTimestamp = function (v, y, m, d) {
-    var year = y.val() ? y.val() : null;
-    if (year) {
-        var month = m.val() ? m.val() : 0; // 0 = January
-        var day = d.val() ? d.val() : 1;
-        var date = new Date(null, month, day, 0, 0, 0);
-        date.setFullYear(year); // use setFullYear() so e.g. 5 = 0005
-        var timestamp = date.getTime();
-        v.val(timestamp ? timestamp * .001: null); // convert ms to s
+var setDateValue = function (v, y, m, d) {
+    var year = y.val();;
+    var month = m.val();
+    var day = d.val();
+    if (year && month && day) {
+        v.val(`${year}-${month}-${day}`);
+    } else if (year && month) {
+        v.val(`${year}-${month}`);
+    } else if (year) {
+        v.val(year);
     } else {
-        // Date() recognizes a null year, but we don't.
-        v.val(null);
+        v.val(null); // must have year
     }
 }

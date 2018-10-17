@@ -14,26 +14,23 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
                 'id' => 'timestamp-before-pid',
                 'class' => 'chosen-select',
             ],
-            'options' => [
-                'empty_option' => '[Any Property]', // @translate
-            ]
         ]);
         ?>
         <input type="text" id="timestamp-before-year" placeholder="<?php echo $this->translate('Enter year'); ?>">
         <select id="timestamp-before-month">
             <option value=""><?php echo $this->translate('Select month'); ?></option>
-            <option value="0"><?php echo $this->translate('January'); ?></option>
-            <option value="1"><?php echo $this->translate('February'); ?></option>>
-            <option value="2"><?php echo $this->translate('March'); ?></option>>
-            <option value="3"><?php echo $this->translate('April'); ?></option>>
-            <option value="4"><?php echo $this->translate('May'); ?></option>>
-            <option value="5"><?php echo $this->translate('June'); ?></option>>
-            <option value="6"><?php echo $this->translate('July'); ?></option>>
-            <option value="7"><?php echo $this->translate('August'); ?></option>>
-            <option value="8"><?php echo $this->translate('September'); ?></option>>
-            <option value="9"><?php echo $this->translate('October'); ?></option>>
-            <option value="10"><?php echo $this->translate('November'); ?></option>>
-            <option value="11"><?php echo $this->translate('December'); ?></option>>
+            <option value="1"><?php echo $this->translate('January'); ?></option>
+            <option value="2"><?php echo $this->translate('February'); ?></option>>
+            <option value="3"><?php echo $this->translate('March'); ?></option>>
+            <option value="4"><?php echo $this->translate('April'); ?></option>>
+            <option value="5"><?php echo $this->translate('May'); ?></option>>
+            <option value="6"><?php echo $this->translate('June'); ?></option>>
+            <option value="7"><?php echo $this->translate('July'); ?></option>>
+            <option value="8"><?php echo $this->translate('August'); ?></option>>
+            <option value="9"><?php echo $this->translate('September'); ?></option>>
+            <option value="10"><?php echo $this->translate('October'); ?></option>>
+            <option value="11"><?php echo $this->translate('November'); ?></option>>
+            <option value="12"><?php echo $this->translate('December'); ?></option>>
         </select>
         <select id="timestamp-before-day">
             <option value=""><?php echo $this->translate('Select day'); ?></option>
@@ -57,26 +54,23 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
                 'id' => 'timestamp-after-pid',
                 'class' => 'chosen-select',
             ],
-            'options' => [
-                'empty_option' => '[Any Property]', // @translate
-            ]
         ]);
         ?>
         <input type="text" id="timestamp-after-year" placeholder="<?php echo $this->translate('Enter year'); ?>">
         <select id="timestamp-after-month">
             <option value=""><?php echo $this->translate('Select month'); ?></option>
-            <option value="0"><?php echo $this->translate('January'); ?></option>
-            <option value="1"><?php echo $this->translate('February'); ?></option>>
-            <option value="2"><?php echo $this->translate('March'); ?></option>>
-            <option value="3"><?php echo $this->translate('April'); ?></option>>
-            <option value="4"><?php echo $this->translate('May'); ?></option>>
-            <option value="5"><?php echo $this->translate('June'); ?></option>>
-            <option value="6"><?php echo $this->translate('July'); ?></option>>
-            <option value="7"><?php echo $this->translate('August'); ?></option>>
-            <option value="8"><?php echo $this->translate('September'); ?></option>>
-            <option value="9"><?php echo $this->translate('October'); ?></option>>
-            <option value="10"><?php echo $this->translate('November'); ?></option>>
-            <option value="11"><?php echo $this->translate('December'); ?></option>>
+            <option value="1"><?php echo $this->translate('January'); ?></option>
+            <option value="2"><?php echo $this->translate('February'); ?></option>>
+            <option value="3"><?php echo $this->translate('March'); ?></option>>
+            <option value="4"><?php echo $this->translate('April'); ?></option>>
+            <option value="5"><?php echo $this->translate('May'); ?></option>>
+            <option value="6"><?php echo $this->translate('June'); ?></option>>
+            <option value="7"><?php echo $this->translate('July'); ?></option>>
+            <option value="8"><?php echo $this->translate('August'); ?></option>>
+            <option value="9"><?php echo $this->translate('September'); ?></option>>
+            <option value="10"><?php echo $this->translate('October'); ?></option>>
+            <option value="11"><?php echo $this->translate('November'); ?></option>>
+            <option value="12"><?php echo $this->translate('December'); ?></option>>
         </select>
         <select id="timestamp-after-day">
             <option value=""><?php echo $this->translate('Select day'); ?></option>
@@ -99,9 +93,6 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
             'attributes' => [
                 'class' => 'chosen-select',
             ],
-            'options' => [
-                'empty_option' => '[Any Property]', // @translate
-            ]
         ]);
         ?>
         <input type="number" step="1" name="numeric[int][lt][val]" placeholder="<?php echo $this->translate('Enter integer'); ?>">    </div>
@@ -118,9 +109,6 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
             'attributes' => [
                 'class' => 'chosen-select',
             ],
-            'options' => [
-                'empty_option' => '[Any Property]', // @translate
-            ]
         ]);
         ?>
         <input type="number" step="1" name="numeric[int][gt][val]" placeholder="<?php echo $this->translate('Enter integer'); ?>">    </div>
@@ -131,13 +119,13 @@ $(function() {
     $('form#advanced-search').on('submit', function (e) {
         var before = $('#timestamp-before-ts');
         var after = $('#timestamp-after-ts');
-        setTimestamp(
+        setDateValue(
             before,
             $('#timestamp-before-year'),
             $('#timestamp-before-month'),
             $('#timestamp-before-day')
         );
-        setTimestamp(
+        setDateValue(
             after,
             $('#timestamp-after-year'),
             $('#timestamp-after-month'),
