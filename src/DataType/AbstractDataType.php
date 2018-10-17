@@ -1,8 +1,11 @@
 <?php
 namespace NumericDataTypes\DataType;
 
+use Doctrine\ORM\QueryBuilder;
+use Omeka\Api\Adapter\AdapterInterface;
 use Omeka\Api\Representation\ValueRepresentation;
 use Omeka\DataType\AbstractDataType as BaseAbstractDataType;
+use Omeka\Entity\Property;
 
 abstract class AbstractDataType extends BaseAbstractDataType implements DataTypeInterface
 {
@@ -14,6 +17,14 @@ abstract class AbstractDataType extends BaseAbstractDataType implements DataType
     public function getJsonLd(ValueRepresentation $value)
     {
         return ['@value' => $value->value()];
+    }
+
+    public function buildQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query)
+    {
+    }
+
+    public function sortQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query, Property $property, $type)
+    {
     }
 }
 

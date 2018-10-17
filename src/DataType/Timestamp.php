@@ -2,8 +2,11 @@
 namespace NumericDataTypes\DataType;
 
 use DateTime;
+use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
+use Omeka\Api\Adapter\AdapterInterface;
 use Omeka\Api\Representation\ValueRepresentation;
+use Omeka\Entity\Property;
 use Omeka\Entity\Value;
 use Zend\Form\Element;
 use Zend\View\Renderer\PhpRenderer;
@@ -121,7 +124,7 @@ class Timestamp extends AbstractDataType
 
     public function getEntityClass()
     {
-        return '\NumericDataTypes\Entity\NumericDataTypesTimestamp';
+        return 'NumericDataTypes\Entity\NumericDataTypesTimestamp';
     }
 
     /**
@@ -180,5 +183,71 @@ class Timestamp extends AbstractDataType
             $date['day_normalized']
         )->setTime(0, 0, 0, 0);
         return $date;
+    }
+
+    /**
+     * numeric => [
+     *   ts => [
+     *     lt => [val => <date>, pid => <propertyID>],
+     *     gt => [val => <date>, pid => <propertyID>],
+     *   ],
+     * ]
+     */
+    public function buildQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query)
+    {
+        if (isset($query['numeric']['ts']['lt']['val'])
+            && isset($query['numeric']['ts']['lt']['pid'])
+            && is_numeric($query['numeric']['ts']['lt']['val'])
+            && is_numeric($query['numeric']['ts']['lt']['pid'])
+        ) {
+            $alias = $adapter->createAlias();
+            $qb->leftJoin(
+                $this->getEntityClass(), $alias, 'WITH',
+                $qb->expr()->andX(
+                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
+                    $qb->expr()->eq("$alias.property", (int) $query['numeric']['ts']['lt']['pid'])
+                )
+            );
+            $qb->andWhere($qb->expr()->lt(
+                "$alias.value",
+                $adapter->createNamedParameter($qb, $this->getNumberFromValue($query['numeric']['ts']['lt']['val']))
+            ));
+        }
+        if (isset($query['numeric']['ts']['gt']['val'])
+            && isset($query['numeric']['ts']['gt']['pid'])
+            && is_numeric($query['numeric']['ts']['gt']['val'])
+            && is_numeric($query['numeric']['ts']['gt']['pid'])
+        ) {
+            $alias = $adapter->createAlias();
+            $qb->leftJoin(
+                $this->getEntityClass(), $alias, 'WITH',
+                $qb->expr()->andX(
+                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
+                    $qb->expr()->eq("$alias.property", (int) $query['numeric']['ts']['gt']['pid'])
+                )
+            );
+            $qb->andWhere($qb->expr()->gt(
+                "$alias.value",
+                $adapter->createNamedParameter($qb, $this->getNumberFromValue($query['numeric']['ts']['gt']['val']))
+            ));
+        }
+    }
+
+    public function sortQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query, Property $property, $type)
+    {
+        if ('ts' === $type) {
+            $alias = $adapter->createAlias();
+            $qb->addSelect("MIN($alias.value) as HIDDEN numeric_value");
+            $qb->leftJoin(
+                'NumericDataTypes\Entity\NumericDataTypesTimestamp',
+                $alias,
+                'WITH',
+                $qb->expr()->andX(
+                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
+                    $qb->expr()->eq("$alias.property", $property->getId())
+                )
+            );
+            $qb->addOrderBy('numeric_value', $query['sort_order']);
+        }
     }
 }

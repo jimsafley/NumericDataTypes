@@ -1,6 +1,10 @@
 <?php
 namespace NumericDataTypes\DataType;
 
+use Doctrine\ORM\QueryBuilder;
+use Omeka\Api\Adapter\AdapterInterface;
+use Omeka\Entity\Property;
+
 interface DataTypeInterface
 {
     /**
@@ -17,4 +21,24 @@ interface DataTypeInterface
      * @return int
      */
     public function getNumberFromValue($value);
+
+    /**
+     * Build a numeric query.
+     *
+     * @param AdapterInterface $adapter
+     * @param QueryBuilder $qb
+     * @param array $query
+     */
+    public function buildQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query);
+
+    /**
+     * Sort a numeric query.
+     *
+     * @param AdapterInterface $adapter
+     * @param QueryBuilder $qb
+     * @param array $query
+     * @param Property $property
+     * @param string $type
+     */
+    public function sortQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query, Property $property, $type);
 }

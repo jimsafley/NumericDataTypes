@@ -69,12 +69,12 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
         $sharedEventManager->attach(
             'Omeka\Api\Adapter\ItemAdapter',
             'api.search.query',
-            [$this, 'addNumericalQuerying']
+            [$this, 'buildQueries']
         );
         $sharedEventManager->attach(
             'Omeka\Api\Adapter\ItemAdapter',
             'api.search.query',
-            [$this, 'addNumericalSorting']
+            [$this, 'sortQueries']
         );
         $sharedEventManager->attach(
             'Omeka\Api\Adapter\ItemAdapter',
@@ -107,7 +107,6 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
      * an easy way to ensure that the numbers in the number tables are in sync
      * with the numbers in the value table.
      *
-     * @todo Automate the generation of $dataTypes array
      * @param Event $event
      */
     public function saveNumericData(Event $event)
@@ -164,23 +163,11 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
     }
 
     /**
-     * Add numerical queries.
+     * Build numerical queries.
      *
-     * numeric => [
-     *   ts => [
-     *     lt => [val => <date>, pid => <propertyID>],
-     *     gt => [val => <date>, pid => <propertyID>],
-     *   ],
-     *   int => [
-     *     lt => [val => <integer>, pid => <propertyID>],
-     *     gt => [val => <integer>, pid => <propertyID>],
-     *   ],
-     * ]
-     *
-     * @todo Generalize query validation and query building
      * @param Event $event
      */
-    public function addNumericalQuerying(Event $event)
+    public function buildQueries(Event $event)
     {
         $query = $event->getParam('request')->getContent();
         if (!isset($query['numeric'])) {
@@ -188,107 +175,19 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
         }
         $adapter = $event->getTarget();
         $qb = $event->getParam('queryBuilder');
-        $numericDataTypes = $this->getNumericDataTypes();
-
-        if (isset($query['numeric']['ts']['lt']['val'])
-            && isset($query['numeric']['ts']['lt']['pid'])
-            && is_numeric($query['numeric']['ts']['lt']['val'])
-            && is_numeric($query['numeric']['ts']['lt']['pid'])
-        ) {
-            $property = (int) $query['numeric']['ts']['lt']['pid'];
-            $value = $numericDataTypes['numeric:timestamp']->getNumberFromValue($query['numeric']['ts']['lt']['val']);
-            $alias = $adapter->createAlias();
-            $qb->leftJoin(
-                'NumericDataTypes\Entity\NumericDataTypesTimestamp',
-                $alias,
-                'WITH',
-                $qb->expr()->andX(
-                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
-                    $qb->expr()->eq("$alias.property", $property)
-                )
-            );
-            $qb->andWhere($qb->expr()->lt(
-                "$alias.value",
-                $adapter->createNamedParameter($qb, $value)
-            ));
-        }
-        if (isset($query['numeric']['ts']['gt']['val'])
-            && isset($query['numeric']['ts']['gt']['pid'])
-            && is_numeric($query['numeric']['ts']['gt']['val'])
-            && is_numeric($query['numeric']['ts']['gt']['pid'])
-        ) {
-            $property = (int) $query['numeric']['ts']['gt']['pid'];
-            $value = $numericDataTypes['numeric:timestamp']->getNumberFromValue($query['numeric']['ts']['gt']['val']);
-            $alias = $adapter->createAlias();
-            $qb->leftJoin(
-                'NumericDataTypes\Entity\NumericDataTypesTimestamp',
-                $alias,
-                'WITH',
-                $qb->expr()->andX(
-                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
-                    $qb->expr()->eq("$alias.property", $property)
-                )
-            );
-            $qb->andWhere($qb->expr()->gt(
-                "$alias.value",
-                $adapter->createNamedParameter($qb, $value)
-            ));
-        }
-        if (isset($query['numeric']['int']['lt']['val'])
-            && isset($query['numeric']['int']['lt']['pid'])
-            && is_numeric($query['numeric']['int']['lt']['val'])
-            && is_numeric($query['numeric']['int']['lt']['pid'])
-        ) {
-            $property = (int) $query['numeric']['int']['lt']['pid'];
-            $value = $numericDataTypes['numeric:integer']->getNumberFromValue($query['numeric']['int']['lt']['val']);
-            $alias = $adapter->createAlias();
-            $qb->leftJoin(
-                'NumericDataTypes\Entity\NumericDataTypesInteger',
-                $alias,
-                'WITH',
-                $qb->expr()->andX(
-                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
-                    $qb->expr()->eq("$alias.property", $property)
-                )
-            );
-            $qb->andWhere($qb->expr()->lt(
-                "$alias.value",
-                $adapter->createNamedParameter($qb, $value)
-            ));
-        }
-        if (isset($query['numeric']['int']['gt']['val'])
-            && isset($query['numeric']['int']['gt']['pid'])
-            && is_numeric($query['numeric']['int']['gt']['val'])
-            && is_numeric($query['numeric']['int']['gt']['pid'])
-        ) {
-            $property = (int) $query['numeric']['int']['gt']['pid'];
-            $value = $numericDataTypes['numeric:integer']->getNumberFromValue($query['numeric']['int']['gt']['val']);
-            $alias = $adapter->createAlias();
-            $qb->leftJoin(
-                'NumericDataTypes\Entity\NumericDataTypesInteger',
-                $alias,
-                'WITH',
-                $qb->expr()->andX(
-                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
-                    $qb->expr()->eq("$alias.property", $property)
-                )
-            );
-            $qb->andWhere($qb->expr()->gt(
-                "$alias.value",
-                $adapter->createNamedParameter($qb, $value)
-            ));
+        foreach ($this->getNumericDataTypes() as $dataTypeName => $dataType) {
+            $dataType->buildQuery($adapter, $qb, $query);
         }
     }
 
     /**
-     * Add numerical sorting.
+     * Sort numerical queries.
      *
-     * sort_by=o-numeric:ts:<vocab_prefix>:<property_local_name>
-     * sort_by=o-numeric:int:<vocab_prefix>:<property_local_name>
+     * sort_by=o-numeric:<typ>:<vocab_prefix>:<property_local_name>
      *
      * @param Event $event
      */
-    public function addNumericalSorting(Event $event)
+    public function sortQueries(Event $event)
     {
         $adapter = $event->getTarget();
         $qb = $event->getParam('queryBuilder');
@@ -298,42 +197,15 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
             return;
         }
         $sortBy = explode(':', $query['sort_by']);
-        if (4 !== count($sortBy)
-            || 'o-numeric' !== $sortBy[0]
-            || !in_array($sortBy[1], ['ts', 'int'])
-        ) {
+        if (4 !== count($sortBy) || 'o-numeric' !== $sortBy[0]) {
             return;
         }
         $property = $adapter->getPropertyByTerm(sprintf('%s:%s', $sortBy[2], $sortBy[3]));
         if (!$property) {
             return;
         }
-        if ('int' === $sortBy[1]) {
-            $alias = $adapter->createAlias();
-            $qb->addSelect("MIN($alias.value) as HIDDEN numeric_value");
-            $qb->leftJoin(
-                'NumericDataTypes\Entity\NumericDataTypesInteger',
-                $alias,
-                'WITH',
-                $qb->expr()->andX(
-                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
-                    $qb->expr()->eq("$alias.property", $property->getId())
-                )
-            );
-            $qb->addOrderBy('numeric_value', $query['sort_order']);
-        } elseif ('ts' === $sortBy[1]) {
-            $alias = $adapter->createAlias();
-            $qb->addSelect("MIN($alias.value) as HIDDEN numeric_value");
-            $qb->leftJoin(
-                'NumericDataTypes\Entity\NumericDataTypesTimestamp',
-                $alias,
-                'WITH',
-                $qb->expr()->andX(
-                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
-                    $qb->expr()->eq("$alias.property", $property->getId())
-                )
-            );
-            $qb->addOrderBy('numeric_value', $query['sort_order']);
+        foreach ($this->getNumericDataTypes() as $dataTypeName => $dataType) {
+            $dataType->sortQuery($adapter, $qb, $query, $property, $sortBy[1]);
         }
     }
 

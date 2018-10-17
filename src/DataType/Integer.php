@@ -1,8 +1,11 @@
 <?php
 namespace NumericDataTypes\DataType;
 
+use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
+use Omeka\Api\Adapter\AdapterInterface;
 use Omeka\Api\Representation\ValueRepresentation;
+use Omeka\Entity\Property;
 use Omeka\Entity\Value;
 use Zend\Form\Element;
 use Zend\View\Renderer\PhpRenderer;
@@ -50,7 +53,7 @@ class Integer extends AbstractDataType
 
     public function getEntityClass()
     {
-        return '\NumericDataTypes\Entity\NumericDataTypesInteger';
+        return 'NumericDataTypes\Entity\NumericDataTypesInteger';
     }
 
     /**
@@ -62,5 +65,71 @@ class Integer extends AbstractDataType
     public function getNumberFromValue($value)
     {
         return (int) $value;
+    }
+
+    /**
+     * numeric => [
+     *   int => [
+     *     lt => [val => <integer>, pid => <propertyID>],
+     *     gt => [val => <integer>, pid => <propertyID>],
+     *   ],
+     * ]
+     */
+    public function buildQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query)
+    {
+        if (isset($query['numeric']['int']['lt']['val'])
+            && isset($query['numeric']['int']['lt']['pid'])
+            && is_numeric($query['numeric']['int']['lt']['val'])
+            && is_numeric($query['numeric']['int']['lt']['pid'])
+        ) {
+            $alias = $adapter->createAlias();
+            $qb->leftJoin(
+                $this->getEntityClass(), $alias, 'WITH',
+                $qb->expr()->andX(
+                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
+                    $qb->expr()->eq("$alias.property", (int) $query['numeric']['int']['lt']['pid'])
+                )
+            );
+            $qb->andWhere($qb->expr()->lt(
+                "$alias.value",
+                $adapter->createNamedParameter($qb, $this->getNumberFromValue($query['numeric']['int']['lt']['val']))
+            ));
+        }
+        if (isset($query['numeric']['int']['gt']['val'])
+            && isset($query['numeric']['int']['gt']['pid'])
+            && is_numeric($query['numeric']['int']['gt']['val'])
+            && is_numeric($query['numeric']['int']['gt']['pid'])
+        ) {
+            $alias = $adapter->createAlias();
+            $qb->leftJoin(
+                $this->getEntityClass(), $alias, 'WITH',
+                $qb->expr()->andX(
+                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
+                    $qb->expr()->eq("$alias.property", (int) $query['numeric']['int']['gt']['pid'])
+                )
+            );
+            $qb->andWhere($qb->expr()->gt(
+                "$alias.value",
+                $adapter->createNamedParameter($qb, $this->getNumberFromValue($query['numeric']['int']['gt']['val']))
+            ));
+        }
+    }
+
+    public function sortQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query, Property $property, $type)
+    {
+        if ('int' === $type) {
+            $alias = $adapter->createAlias();
+            $qb->addSelect("MIN($alias.value) as HIDDEN numeric_value");
+            $qb->leftJoin(
+                'NumericDataTypes\Entity\NumericDataTypesInteger',
+                $alias,
+                'WITH',
+                $qb->expr()->andX(
+                    $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
+                    $qb->expr()->eq("$alias.property", $property->getId())
+                )
+            );
+            $qb->addOrderBy('numeric_value', $query['sort_order']);
+        }
     }
 }
