@@ -294,7 +294,7 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
         $qb = $event->getParam('queryBuilder');
         $query = $event->getParam('request')->getContent();
 
-        if (!is_string($query['sort_by'])) {
+        if (!isset($query['sort_by']) || !is_string($query['sort_by'])) {
             return;
         }
         $sortBy = explode(':', $query['sort_by']);
