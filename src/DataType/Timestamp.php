@@ -239,9 +239,7 @@ class Timestamp extends AbstractDataType
             $alias = $adapter->createAlias();
             $qb->addSelect("MIN($alias.value) as HIDDEN numeric_value");
             $qb->leftJoin(
-                'NumericDataTypes\Entity\NumericDataTypesTimestamp',
-                $alias,
-                'WITH',
+                $this->getEntityClass(), $alias, 'WITH',
                 $qb->expr()->andX(
                     $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
                     $qb->expr()->eq("$alias.property", $property->getId())

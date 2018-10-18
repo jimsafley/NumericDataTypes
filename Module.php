@@ -183,7 +183,7 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
     /**
      * Sort numerical queries.
      *
-     * sort_by=o-numeric:<typ>:<vocab_prefix>:<property_local_name>
+     * sort_by=o-numeric:<type>:<vocab_prefix>:<property_local_name>
      *
      * @param Event $event
      */
