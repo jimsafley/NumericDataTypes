@@ -14,11 +14,6 @@ abstract class AbstractDataType extends BaseAbstractDataType implements DataType
         return 'Numeric'; // @translate
     }
 
-    public function getJsonLd(ValueRepresentation $value)
-    {
-        return ['@value' => $value->value()];
-    }
-
     public function buildQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query)
     {
     }

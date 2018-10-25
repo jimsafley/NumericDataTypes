@@ -31,6 +31,22 @@ class Timestamp extends AbstractDataType
         return 'Timestamp';
     }
 
+    public function getJsonLd(ValueRepresentation $value)
+    {
+        $date = $this->getDateFromValue($value->value());
+        if (isset($date['month']) && isset($date['day'])) {
+            $dataType = 'date';
+        } elseif (isset($date['month'])) {
+            $dataType = 'gYearMonth';
+        } else {
+            $dataType = 'gYear';
+        }
+        return [
+            '@value' => $value->value(),
+            '@type' => sprintf('o-module-numeric-xsd:%s', $dataType),
+        ];
+    }
+
     public function form(PhpRenderer $view)
     {
         $valueInput = new Element\Hidden('numeric-timestamp-value');
@@ -157,7 +173,7 @@ class Timestamp extends AbstractDataType
     {
         $isMatch = preg_match('/^(?<year>-?(\d+))(-(?<month>\d{1,2}))?(?:-(?<day>\d{1,2}))?$/', $value, $matches);
         if (!$isMatch) {
-            throw \InvalidArgumentException('Invalid date string');
+            throw new \InvalidArgumentException('Invalid date string');
         }
         $date = [
             'year' => (int) $matches['year'],
@@ -167,13 +183,13 @@ class Timestamp extends AbstractDataType
             'day_normalized' => isset($matches['day']) ? (int) $matches['day'] : 1,
         ];
         if ((self::YEAR_MIN > $date['year']) || (self::YEAR_MAX < $date['year'])) {
-            throw \InvalidArgumentException('Invalid year');
+            throw new \InvalidArgumentException('Invalid year');
         }
         if ((1 > $date['month_normalized']) || (12 < $date['month_normalized'])) {
-            throw \InvalidArgumentException('Invalid month');
+            throw new \InvalidArgumentException('Invalid month');
         }
         if ((1 > $date['day_normalized']) || (31 < $date['day_normalized'])) {
-            throw \InvalidArgumentException('Invalid day');
+            throw new \InvalidArgumentException('Invalid day');
         }
         // Adding the date object here to reduce code duplication.
         $date['date'] = new DateTime;

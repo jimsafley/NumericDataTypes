@@ -22,6 +22,14 @@ class Integer extends AbstractDataType
         return 'Integer';
     }
 
+    public function getJsonLd(ValueRepresentation $value)
+    {
+        return [
+            '@value' => (int) $value->value(),
+            '@type' => 'o-module-numeric-xsd:integer',
+        ];
+    }
+
     public function form(PhpRenderer $view)
     {
         $valueInput = new Element\Number('numeric-integer-value');
