@@ -5,7 +5,6 @@ use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
 use Omeka\Api\Adapter\AdapterInterface;
 use Omeka\Api\Representation\ValueRepresentation;
-use Omeka\Entity\Property;
 use Omeka\Entity\Value;
 use Zend\Form\Element;
 use Zend\View\Renderer\PhpRenderer;
@@ -123,7 +122,7 @@ class Integer extends AbstractDataType
         }
     }
 
-    public function sortQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query, Property $property, $type)
+    public function sortQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query, $type, $propertyId)
     {
         if ('int' === $type) {
             $alias = $adapter->createAlias();
@@ -132,7 +131,7 @@ class Integer extends AbstractDataType
                 $this->getEntityClass(), $alias, 'WITH',
                 $qb->expr()->andX(
                     $qb->expr()->eq("$alias.resource", $adapter->getEntityClass() . '.id'),
-                    $qb->expr()->eq("$alias.property", $property->getId())
+                    $qb->expr()->eq("$alias.property", $propertyId)
                 )
             );
             $qb->addOrderBy('numeric_value', $query['sort_order']);

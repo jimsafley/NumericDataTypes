@@ -3,7 +3,6 @@ namespace NumericDataTypes\DataType;
 
 use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Adapter\AdapterInterface;
-use Omeka\Entity\Property;
 
 interface DataTypeInterface
 {
@@ -37,8 +36,8 @@ interface DataTypeInterface
      * @param AdapterInterface $adapter
      * @param QueryBuilder $qb
      * @param array $query
-     * @param Property $property
      * @param string $type
+     * @param int $propertyId
      */
-    public function sortQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query, Property $property, $type);
+    public function sortQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query, $type, $propertyId);
 }

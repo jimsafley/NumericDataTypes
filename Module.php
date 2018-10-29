@@ -192,7 +192,7 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
     /**
      * Sort numerical queries.
      *
-     * sort_by=o-numeric:<type>:<vocab_prefix>:<property_local_name>
+     * sort_by=numeric:<type>:<propertyId>
      *
      * @param Event $event
      */
@@ -205,16 +205,12 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
         if (!isset($query['sort_by']) || !is_string($query['sort_by'])) {
             return;
         }
-        $sortBy = explode(':', $query['sort_by']);
-        if (4 !== count($sortBy) || 'o-numeric' !== $sortBy[0]) {
-            return;
-        }
-        $property = $adapter->getPropertyByTerm(sprintf('%s:%s', $sortBy[2], $sortBy[3]));
-        if (!$property) {
+        list($namespace, $type, $propertyId) = explode(':', $query['sort_by']);
+        if ('numeric' !== $namespace || !is_string($type) || !is_numeric($propertyId)) {
             return;
         }
         foreach ($this->getNumericDataTypes() as $dataTypeName => $dataType) {
-            $dataType->sortQuery($adapter, $qb, $query, $property, $sortBy[1]);
+            $dataType->sortQuery($adapter, $qb, $query, $type, $propertyId);
         }
     }
 

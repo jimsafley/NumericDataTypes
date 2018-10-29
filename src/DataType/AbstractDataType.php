@@ -18,7 +18,7 @@ abstract class AbstractDataType extends BaseAbstractDataType implements DataType
     {
     }
 
-    public function sortQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query, Property $property, $type)
+    public function sortQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query, $type, $propertyId)
     {
     }
 }
