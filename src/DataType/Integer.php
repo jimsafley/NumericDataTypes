@@ -124,7 +124,7 @@ class Integer extends AbstractDataType
 
     public function sortQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query, $type, $propertyId)
     {
-        if ('int' === $type) {
+        if ('integer' === $type) {
             $alias = $adapter->createAlias();
             $qb->addSelect("MIN($alias.value) as HIDDEN numeric_value");
             $qb->leftJoin(

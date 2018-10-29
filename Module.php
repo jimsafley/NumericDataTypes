@@ -82,6 +82,11 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
             [$this, 'saveNumericData']
         );
         $sharedEventManager->attach(
+            '*',
+            'view.sort-selector',
+            [$this, 'addSortings']
+        );
+        $sharedEventManager->attach(
             'Omeka\Controller\Admin\Item',
             'view.advanced_search',
             function (Event $event) {
@@ -212,6 +217,30 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
         foreach ($this->getNumericDataTypes() as $dataTypeName => $dataType) {
             $dataType->sortQuery($adapter, $qb, $query, $type, $propertyId);
         }
+    }
+
+    /**
+     * Add numeric sort options to sort by form.
+     *
+     * @param Event $event
+     */
+    public function addSortings(Event $event)
+    {
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $sortBy = $event->getParam('sortBy');
+        foreach ($this->getNumericDataTypes() as $dataTypeName => $dataType) {
+            $dql = 'SELECT p FROM Omeka\Entity\ResourceTemplateProperty p WHERE p.dataType = :dataType';
+            $query = $em->createQuery($dql);
+            $query->setParameter('dataType', $dataType->getName());
+            foreach ($query->getResult() as $resTemProp) {
+                $property = $resTemProp->getProperty();
+                $sortBy[] = [
+                    'value' => sprintf('%s:%s', $dataType->getName(), $property->getId()),
+                    'label' => $resTemProp->getAlternateLabel() ?: $property->getLabel(),
+                ];
+            }
+        }
+        $event->setParam('sortBy', $sortBy);
     }
 
     /**

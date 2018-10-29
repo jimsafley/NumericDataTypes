@@ -250,7 +250,7 @@ class Timestamp extends AbstractDataType
 
     public function sortQuery(AdapterInterface $adapter, QueryBuilder $qb, array $query, $type, $propertyId)
     {
-        if ('ts' === $type) {
+        if ('timestamp' === $type) {
             $alias = $adapter->createAlias();
             $qb->addSelect("MIN($alias.value) as HIDDEN numeric_value");
             $qb->leftJoin(
