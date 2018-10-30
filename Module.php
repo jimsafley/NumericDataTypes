@@ -240,19 +240,41 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
     public function addSortings(Event $event)
     {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $sortBy = $event->getParam('sortBy');
+        $numericSortBy = [];
         foreach ($this->getNumericDataTypes() as $dataTypeName => $dataType) {
             $dql = 'SELECT p FROM Omeka\Entity\ResourceTemplateProperty p WHERE p.dataType = :dataType';
             $query = $em->createQuery($dql);
             $query->setParameter('dataType', $dataType->getName());
-            foreach ($query->getResult() as $resTemProp) {
-                $property = $resTemProp->getProperty();
-                $sortBy[] = [
-                    'value' => sprintf('%s:%s', $dataType->getName(), $property->getId()),
-                    'label' => $resTemProp->getAlternateLabel() ?: $property->getLabel(),
-                ];
+            foreach ($query->getResult() as $templateProperty) {
+                $property = $templateProperty->getProperty();
+                $value = sprintf('%s:%s', $dataType->getName(), $property->getId());
+                if (!isset($numericSortBy[$value])) {
+                    $numericSortBy[$value] = [
+                        'value' => $value,
+                        'label' => $property->getLabel(),
+                        'alternate_labels' => [],
+                    ];
+                }
+                $numericSortBy[$value]['alternate_labels'][] = $templateProperty->getAlternateLabel();
             }
         }
+        // Include alternate labels, if any.
+        foreach ($numericSortBy as $key => $value) {
+            $altLabels = array_unique(array_filter($numericSortBy[$key]['alternate_labels']));
+            if ($altLabels) {
+                $numericSortBy[$key]['label'] = sprintf(
+                    '%s: %s',
+                    $numericSortBy[$key]['label'],
+                    implode('; ', $altLabels)
+                );
+            }
+        }
+        // Sort options alphabetically.
+        usort($numericSortBy, function ($a, $b) {
+            return strcasecmp($a['label'], $b['label']);
+        });
+        $sortBy = $event->getParam('sortBy');
+        $sortBy = array_merge($sortBy, $numericSortBy);
         $event->setParam('sortBy', $sortBy);
     }
 
