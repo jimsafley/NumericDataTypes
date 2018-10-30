@@ -96,6 +96,15 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
             }
         );
         $sharedEventManager->attach(
+            'Omeka\Controller\Site\Item',
+            'view.advanced_search',
+            function (Event $event) {
+                $partials = $event->getParam('partials');
+                $partials[] = 'common/numeric-data-types-advanced-search';
+                $event->setParam('partials', $partials);
+            }
+        );
+        $sharedEventManager->attach(
             '*',
             'api.context',
             function (Event $event) {

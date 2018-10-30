@@ -8,11 +8,14 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
     </div>
     <div class="inputs">
         <?php
-        echo $this->propertySelect([
+        echo $this->numericPropertySelect([
             'name' => 'numeric[ts][lt][pid]',
             'attributes' => [
                 'id' => 'timestamp-before-pid',
                 'class' => 'chosen-select',
+            ],
+            'options' => [
+                'numeric_data_type' => 'timestamp',
             ],
         ]);
         ?>
@@ -48,11 +51,14 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
     </div>
     <div class="inputs">
         <?php
-        echo $this->propertySelect([
+        echo $this->numericPropertySelect([
             'name' => 'numeric[ts][gt][pid]',
             'attributes' => [
                 'id' => 'timestamp-after-pid',
                 'class' => 'chosen-select',
+            ],
+            'options' => [
+                'numeric_data_type' => 'timestamp',
             ],
         ]);
         ?>
@@ -88,10 +94,13 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
     </div>
     <div class="inputs">
         <?php
-        echo $this->propertySelect([
+        echo $this->numericPropertySelect([
             'name' => 'numeric[int][lt][pid]',
             'attributes' => [
                 'class' => 'chosen-select',
+            ],
+            'options' => [
+                'numeric_data_type' => 'integer',
             ],
         ]);
         ?>
@@ -104,10 +113,13 @@ $this->headScript()->appendFile($this->assetUrl('js/numeric-data-types.js', 'Num
     </div>
     <div class="inputs">
         <?php
-        echo $this->propertySelect([
+        echo $this->numericPropertySelect([
             'name' => 'numeric[int][gt][pid]',
             'attributes' => [
                 'class' => 'chosen-select',
+            ],
+            'options' => [
+                'numeric_data_type' => 'integer',
             ],
         ]);
         ?>

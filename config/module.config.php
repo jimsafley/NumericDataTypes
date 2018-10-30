@@ -19,4 +19,14 @@ return [
             'numeric:integer' => NumericDataTypes\DataType\Integer::class,
         ],
     ],
+    'view_helpers' => [
+        'factories' => [
+            'numericPropertySelect' => NumericDataTypes\Service\ViewHelper\NumericPropertySelectFactory::class,
+        ],
+    ],
+    'form_elements' => [
+        'factories' => [
+            'NumericDataTypes\Form\Element\NumericPropertySelect' => NumericDataTypes\Service\Form\Element\NumericPropertySelectFactory::class,
+        ],
+    ],
 ];
