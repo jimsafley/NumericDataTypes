@@ -210,7 +210,11 @@ DROP TABLE IF EXISTS numeric_data_types_timestamp;
         if (!isset($query['sort_by']) || !is_string($query['sort_by'])) {
             return;
         }
-        list($namespace, $type, $propertyId) = explode(':', $query['sort_by']);
+        $sortBy = explode(':', $query['sort_by']);
+        if (3 !== count($sortBy)) {
+            return;
+        }
+        list($namespace, $type, $propertyId) = $sortBy;
         if ('numeric' !== $namespace || !is_string($type) || !is_numeric($propertyId)) {
             return;
         }
